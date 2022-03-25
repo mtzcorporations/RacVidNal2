@@ -1,7 +1,8 @@
 from ex2_utils import Tracker
 import numpy as np
-
-class msTracker(Tracker):
+from ex1_utils import gausssmooth
+from  ex2_utils import*
+class msTracker():
     def initialize(self, image, region):
 
         if len(region) == 8:
@@ -21,12 +22,29 @@ class msTracker(Tracker):
         self.position = (region[0] + region[2] / 2, region[1] + region[3] / 2)
         self.size = (region[2], region[3])
 
-    def MeanShiftSeek(self):
+    def MeanShiftSeek(self,imag,h,kernelG):
+        vel = imag.shape
+        patch,mask=get_patch(imag,[vel[0]/2,vel[1]/2],[h,h])
+        X=np.arange(-int(h/2),h/2,dtype=int);
+        X= np.tile(X,(h,1))
+        Y=np.transpose(X)
         for i in range(0,1):
-            print("1")
+            pTK=patch*kernelG
+            Xk=np.sum(X*pTK)/np.sum(pTK);
+            Yk = np.sum(Y*pTK)/np.sum(pTK);
+            print(Xk)
 
     def MeanShiftTracker(parameters):
         print("here")
+class MSParams():
+    def __init__(self):
+        self.enlarge_factor = 2
 
+def generate_responses_1():
+    responses = np.zeros((100, 100), dtype=np.float32)
+    responses[70, 50] = 1
+    responses[50, 70] = 0.5
+    return gausssmooth(responses, 10)
+slika=generate_responses_1()
 tracker=msTracker();
-tracker.MeanShiftSeek();
+tracker.MeanShiftSeek(slika,7,create_epanechnik_kernel(7,7,1));
