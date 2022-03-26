@@ -1,5 +1,6 @@
 from ex2_utils import Tracker
 import numpy as np
+import cv2
 from ex1_utils import gausssmooth
 from  ex2_utils import*
 class msTracker():
@@ -22,17 +23,45 @@ class msTracker():
         self.position = (region[0] + region[2] / 2, region[1] + region[3] / 2)
         self.size = (region[2], region[3])
 
-    def MeanShiftSeek(self,imag,h,kernelG):
-        vel = imag.shape
-        patch,mask=get_patch(imag,[vel[0]/2,vel[1]/2],[h,h])
+    def MeanShiftSeek(self,imag,h,kernelG,center,nIter,minChange):
+        print(center)
         X=np.arange(-int(h/2),h/2,dtype=int);
         X= np.tile(X,(h,1))
         Y=np.transpose(X)
-        for i in range(0,1):
-            pTK=patch*kernelG
-            Xk=np.sum(X*pTK)/np.sum(pTK);
-            Yk = np.sum(Y*pTK)/np.sum(pTK);
-            print(Xk)
+        p=np.zeros(imag.shape)
+        xP=0
+        yP=0
+        countConver=0
+        for i in range(0,1000000):
+            patch, mask = get_patch(imag, [center[0] / 2, center[1] / 2], [h, h])
+            pK=patch*kernelG
+            pKSum=np.sum(pK)
+            if (pKSum==0):
+                print(i)
+                return
+            Xk=np.sum(X*pK)/pKSum;
+            Yk = np.sum(Y*pK)/pKSum;
+            #print(Xk-xP,Yk-yP)
+            if(np.abs(Xk-xP) < minChange and np.abs(Yk-yP) < minChange):
+                countConver+=1
+                if countConver==nIter:
+                    print(i)
+                    return
+            else:
+                countConver=0
+            center[0] += Xk
+            center[1] += Yk
+            xP=Xk
+            yP=Yk
+
+           # if(Xp <= minChange and Yp<=minChange):
+            #    print(i,"Konvergiralo")
+            #    break;
+
+        #novo=cv2.bitwise_and(imag,p)
+        #cv2.imshow("okno",novo)
+        #cv2.waitKey(0)  # wait for a keyboard input
+        #cv2.destroyAllWindows()
 
     def MeanShiftTracker(parameters):
         print("here")
@@ -47,4 +76,5 @@ def generate_responses_1():
     return gausssmooth(responses, 10)
 slika=generate_responses_1()
 tracker=msTracker();
-tracker.MeanShiftSeek(slika,7,create_epanechnik_kernel(7,7,1));
+h=11
+tracker.MeanShiftSeek(slika,h,create_epanechnik_kernel(h,h,1),[80,70],50,0.00);
