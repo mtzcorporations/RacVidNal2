@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from ex1_utils import gausssmooth
 from  ex2_utils import*
-class msTracker():
+class msTracker(Tracker):
     def initialize(self, image, region):
 
         if len(region) == 8:
@@ -41,8 +41,8 @@ class msTracker():
                 return
             Xk=np.sum(X*pK)/pKSum;
             Yk = np.sum(Y*pK)/pKSum;
-            #print(Xk-xP,Yk-yP)
-            if(np.abs(Xk-xP) < minChange and np.abs(Yk-yP) < minChange):
+            print(Xk-xP,Yk-yP)
+            if(np.abs(Xk-xP) <= minChange and np.abs(Yk-yP) <= minChange):
                 countConver+=1
                 if countConver==nIter:
                     print(i)
@@ -53,28 +53,32 @@ class msTracker():
             center[1] += Yk
             xP=Xk
             yP=Yk
-
-           # if(Xp <= minChange and Yp<=minChange):
-            #    print(i,"Konvergiralo")
-            #    break;
-
-        #novo=cv2.bitwise_and(imag,p)
         #cv2.imshow("okno",novo)
         #cv2.waitKey(0)  # wait for a keyboard input
         #cv2.destroyAllWindows()
 
-    def MeanShiftTracker(parameters):
-        print("here")
+    def MeanShiftTracker(delf,image):
+        left = max(round(self.position[0] - float(self.window) / 2), 0)
+        top = max(round(self.position[1] - float(self.window) / 2), 0)
+
+        right = min(round(self.position[0] + float(self.window) / 2), image.shape[1] - 1)
+        bottom = min(round(self.position[1] + float(self.window) / 2), image.shape[0] - 1)
+
+        if right - left < self.template.shape[1] or bottom - top < self.template.shape[0]:
+            return [self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2, self.size[0],
+                    self.size[1]]
+
+        cut = image[int(top):int(bottom), int(left):int(right)]
+
+
 class MSParams():
     def __init__(self):
         self.enlarge_factor = 2
 
-def generate_responses_1():
-    responses = np.zeros((100, 100), dtype=np.float32)
-    responses[70, 50] = 1
-    responses[50, 70] = 0.5
-    return gausssmooth(responses, 10)
+
 slika=generate_responses_1()
-tracker=msTracker();
-h=11
+parameters = MSParams()
+tracker=msTracker(parameters);
+
+h=7
 tracker.MeanShiftSeek(slika,h,create_epanechnik_kernel(h,h,1),[80,70],50,0.00);
