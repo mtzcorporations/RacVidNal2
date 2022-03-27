@@ -11,8 +11,20 @@ def generate_responses_1():
     responses[70, 50] = 1
     responses[50, 70] = 0.5
     return gausssmooth(responses, 10)
-
 def get_patch(img, center, sz):
+    # crop coordinates
+    w = int(math.floor(sz[0]))
+    h = int(math.floor(sz[1]))
+    x0 = round(int(center[0] - h / 2))
+    y0 = round(int(center[1] - w / 2))
+    x1 = int(round(x0 + h))
+    y1 = int(round(y0 + w))
+    # padding
+    x0_pad = max(0, -x0)
+    x1_pad = max(x1 - img.shape[1] + 1, 0)
+    y0_pad = max(0, -y0)
+    y1_pad = max(y1 - img.shape[0] + 1, 0)
+def get_patchOriginal(img, center, sz):
     # crop coordinates
     x0 = round(int(center[0] - sz[0] / 2))
     y0 = round(int(center[1] - sz[1] / 2))
