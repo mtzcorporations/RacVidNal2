@@ -20,13 +20,18 @@ class MeanShiftTracker(Tracker):
 
         self.template = image[int(top):int(bottom), int(left):int(right)]
         self.position = (region[0] + region[2] / 2, region[1] + region[3] / 2)
-        self.size = (region[2],region[3])
+        if (int(region[2]) % 2 == 0):
+            region[2]=region [2] + 1
+        if (int(region[2]) % 2 == 0):
+            region[3] = region[3] + 1
+        self.size = (int(region[2]),int(region[3]))
 
         self.nbins = 16
-        self.kernel = create_epanechnik_kernel(self.size[0],self.size[1], 1)
+        self.kernel = create_epanechnik_kernel(self.size[1],self.size[0], 1)
         #center [širina,višina]
         patch, mask = get_patch(image, self.position, self.size)
-        self.q =extract_histogram(patch,self.nbins,self.kernel)
+        self.q = extract_histogram(patch,self.nbins,self.kernel*mask)
+        self.q=np.divide(self.q, np.sum(self.q))
 
     def MeanShiftSeek(self,imag,h,kernelG,center,nIter,minChange):
         print(center)
@@ -37,7 +42,7 @@ class MeanShiftTracker(Tracker):
         yP=0
         countConver=0
         for i in range(0,1000000):
-            patch, mask = get_patchOriginal(imag, [center[0] / 2, center[1] / 2], [h, h])
+            patch, mask = get_patch(imag, [center[0] / 2, center[1] / 2], [h, h])
             pK=patch*kernelG
             pKSum=np.sum(pK)
             if (pKSum==0):
@@ -60,34 +65,40 @@ class MeanShiftTracker(Tracker):
         #cv2.imshow("okno",novo)
         #cv2.waitKey(0)  # wait for a keyboard input
         #cv2.destroyAllWindows()
-    def MeanShift_seek_vector(self,w,h,Wi,center,kernelG,nIter,minChange):
-        X = np.arange(-int(w / 2), w / 2, dtype=int);
-        X = np.tile(X, (h, 1))
-        Y = np.transpose(X)
+    def MeanShift_seek_vector(self,w,h,Wi,cent,kernelG,nIter,minChange):
+        cX=cent[0]
+        cY=cent[1]
+        if (w % 2 == 0):
+            w = w + 1
+        if (h % 2 == 0):
+            h = h + 1
+        X = np.arange(-int(h / 2), h / 2, dtype=int)
+        X = np.tile(X, (w, 1))
+        Y =(np.arange(-int(w / 2), w / 2, dtype=int))
+        Y = np.transpose(np.tile(Y, (h, 1)))
         xP = 0
         yP = 0
         countConver = 0
-        for i in range(0, 100):
+        for i in range(0, 1):
             pK = Wi * kernelG
             pKSum = np.sum(pK)
             if (pKSum == 0):
                 print("error")
-                return
+                return cX,cY
             Xk = np.sum(X * pK) / pKSum;
             Yk = np.sum(Y * pK) / pKSum;
-            #print(Xk - xP, Yk - yP)
             if (np.abs(Xk - xP) <= minChange and np.abs(Yk - yP) <= minChange):
                 countConver += 1
                 if countConver == nIter:
-                    print(i)
-                    return
+                    return cX,cY
             else:
                 countConver = 0
-            center[0] += Xk
-            center[1] += Yk
+            cX += Xk
+            cY += Yk
             xP = Xk
             yP = Yk
-        return Xk,Yk
+
+        return cX,cY
     def track(self,image):
         left = max(round(self.position[0] - float(self.window) / 2), 0)
         top = max(round(self.position[1] - float(self.window) / 2), 0)
@@ -99,26 +110,39 @@ class MeanShiftTracker(Tracker):
             return [self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2, self.size[0],
                     self.size[1]]
 
-        cut = image[int(top):int(bottom), int(left):int(right)]
+        #cut = image[int(top):int(bottom), int(left):int(right)]
 
         koraki=5
         newPos = self.position
-        kernel = np.ones(self.size)
+        w=self.size[0]
+        h=self.size[1]
+        if (w % 2 == 0):
+            w = w + 1
+        if (h % 2 == 0):
+            h = h + 1
+        kernel = np.ones([w,h])
+        print("--------------------------------------------")
         #run tracker on exctracted imag
         for i in range(0,koraki):
+            #self.kernel = create_epanechnik_kernel(self.size[0], self.size[1], 1)
+            print(kernel.shape)
             patch,mask = get_patch(image,newPos,self.size)
+            #kernel=kernel*mask
+            print(patch.shape,"patch")
             #self.kernel=self.kernel*mask
-            p=extract_histogram(patch,self.nbins,self.kernel)
-            v=np.sqrt(self.q/p)
+            #normaliziraj p in q
+            p=extract_histogram(patch,self.nbins,self.kernel*mask)
+            p = np.divide(p, np.sum(p))
+            v=np.sqrt(self.q/(p+0.0000001))
             Wi=backproject_histogram(patch,v,self.nbins)
             newPos=self.MeanShift_seek_vector(self.size[0],self.size[1],Wi,newPos,kernel,10,0.0000)
-            #newPos=newPos+[]
+            #print(newPos)
             #distance=newPos-self.position
             #if : # nastavi newPos
             #     break
         self.position=newPos
-        left = max(round(self.position[0] - float(self.window) / 2), 0)
-        top = max(round(self.position[1] - float(self.window) / 2), 0)
+        left = max(round(self.position[0] - float(self.size[0]) / 2), 0)
+        top = max(round(self.position[1] - float(self.size[1]) / 2), 0)
         return  [left, top, self.size[0], self.size[1]] #center x,y,širina,višina
 
 class MSParams():

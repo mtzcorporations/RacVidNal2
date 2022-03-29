@@ -23,8 +23,8 @@ sequence = VOTSequence(dataset_path, sequence)
 init_frame = 0
 n_failures = 0
 # create parameters and tracker objects
-parameters = NCCParams()
-tracker = NCCTracker(parameters)
+#parameters = NCCParams()
+#tracker = NCCTracker(parameters)
 parameters = MSParams()
 tracker = MeanShiftTracker(parameters)
 
