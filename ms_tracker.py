@@ -136,9 +136,9 @@ class MeanShiftTracker(Tracker):
             v=np.sqrt(self.q/(p+0.0000001))
             Wi=backproject_histogram(patch,v,self.nbins)
             newPos=self.MeanShift_seek_vector(self.size[0],self.size[1],Wi,newPos,kernel,10,0.0000)
-            #print(newPos)
+            #print(np.square())
             #distance=newPos-self.position
-            #if : # nastavi newPos
+            #if : #  (newPos[0]"2 + newPos[1]"2<epsiolon)
             #     break
         self.position=newPos
         left = max(round(self.position[0] - float(self.size[0]) / 2), 0)
