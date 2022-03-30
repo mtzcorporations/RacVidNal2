@@ -1,10 +1,15 @@
 from ex2_utils import Tracker
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from ex1_utils import gausssmooth
 from  ex2_utils import*
 class MeanShiftTracker(Tracker):
     def initialize(self, image, region):
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        #print(np.max(image[0]))
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
         if len(region) == 8:
             x_ = np.array(region[::2])
             y_ = np.array(region[1::2])
@@ -26,11 +31,12 @@ class MeanShiftTracker(Tracker):
             region[3] = region[3] + 1
         self.size = (int(region[2]),int(region[3]))
 
-        self.nbins = 16
+        self.nbins = 8
         self.kernel = create_epanechnik_kernel(self.size[1],self.size[0], 1)
         #center [širina,višina]
         patch, mask = get_patch(image, self.position, self.size)
         self.q = extract_histogram(patch,self.nbins,self.kernel*mask)
+
         self.q=np.divide(self.q, np.sum(self.q))
 
     def MeanShiftSeek(self,imag,h,kernelG,center,nIter,minChange):
@@ -65,20 +71,15 @@ class MeanShiftTracker(Tracker):
         #cv2.imshow("okno",novo)
         #cv2.waitKey(0)  # wait for a keyboard input
         #cv2.destroyAllWindows()
-    def MeanShift_seek_vector(self,w,h,Wi,cent,kernelG,nIter,minChange):
+    def MeanShift_seek_vector(self,w,h,Wi,cent,kernelG):
         cX=cent[0]
         cY=cent[1]
-        if (w % 2 == 0):
-            w = w + 1
-        if (h % 2 == 0):
-            h = h + 1
         X = np.arange(-int(h / 2), h / 2, dtype=int)
         X = np.tile(X, (w, 1))
         Y =(np.arange(-int(w / 2), w / 2, dtype=int))
         Y = np.transpose(np.tile(Y, (h, 1)))
-        xP = 0
-        yP = 0
-        countConver = 0
+        Xk=0
+        Yk=0
         for i in range(0, 1):
             pK = Wi * kernelG
             pKSum = np.sum(pK)
@@ -86,20 +87,14 @@ class MeanShiftTracker(Tracker):
                 print("error")
                 return cX,cY
             Xk = np.sum(X * pK) / pKSum;
-            Yk = np.sum(Y * pK) / pKSum;
-            if (np.abs(Xk - xP) <= minChange and np.abs(Yk - yP) <= minChange):
-                countConver += 1
-                if countConver == nIter:
-                    return cX,cY
-            else:
-                countConver = 0
+            Yk = np.sum(Y * pK) / pKSum
             cX += Xk
             cY += Yk
-            xP = Xk
-            yP = Yk
 
-        return cX,cY
+        return [cX,cY],[Xk,Yk]
     def track(self,image):
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
+        #image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         left = max(round(self.position[0] - float(self.window) / 2), 0)
         top = max(round(self.position[1] - float(self.window) / 2), 0)
 
@@ -109,10 +104,7 @@ class MeanShiftTracker(Tracker):
         if right - left < self.template.shape[1] or bottom - top < self.template.shape[0]:
             return [self.position[0] + self.size[0] / 2, self.position[1] + self.size[1] / 2, self.size[0],
                     self.size[1]]
-
-        #cut = image[int(top):int(bottom), int(left):int(right)]
-
-        koraki=5
+        koraki=40
         newPos = self.position
         w=self.size[0]
         h=self.size[1]
@@ -121,25 +113,24 @@ class MeanShiftTracker(Tracker):
         if (h % 2 == 0):
             h = h + 1
         kernel = np.ones([w,h])
-        print("--------------------------------------------")
+       # print("--------------------------------------------")
         #run tracker on exctracted imag
         for i in range(0,koraki):
-            #self.kernel = create_epanechnik_kernel(self.size[0], self.size[1], 1)
-            print(kernel.shape)
             patch,mask = get_patch(image,newPos,self.size)
-            #kernel=kernel*mask
-            print(patch.shape,"patch")
-            #self.kernel=self.kernel*mask
             #normaliziraj p in q
             p=extract_histogram(patch,self.nbins,self.kernel*mask)
+
             p = np.divide(p, np.sum(p))
+            #plt.hist(p, bins=8)
+            #plt.show()
             v=np.sqrt(self.q/(p+0.0000001))
             Wi=backproject_histogram(patch,v,self.nbins)
-            newPos=self.MeanShift_seek_vector(self.size[0],self.size[1],Wi,newPos,kernel,10,0.0000)
-            #print(np.square())
-            #distance=newPos-self.position
-            #if : #  (newPos[0]"2 + newPos[1]"2<epsiolon)
-            #     break
+            #imgplot = plt.imshow(Wi)
+            #plt.show()
+            newPos,move=self.MeanShift_seek_vector(w,h,Wi,newPos,kernel)
+            if(np.sum(np.square(move))<4):
+                #print("nreak")
+                break
         self.position=newPos
         left = max(round(self.position[0] - float(self.size[0]) / 2), 0)
         top = max(round(self.position[1] - float(self.size[1]) / 2), 0)
