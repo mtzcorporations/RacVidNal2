@@ -141,10 +141,11 @@ class MSParams():
         self.enlarge_factor = 2
 
 
-#slika=generate_responses_1()
-#parameters = MSParams()
-#tracker=msTracker(parameters)
+slika=generate_responses_1()
+parameters = MSParams()
+parameters = MSParams()
+tracker = MeanShiftTracker(parameters)
 #tracker.initialize(img, sequence.get_annotation(frame_idx, type='rectangle'))
-#tracker.MeanShiftTracker(slika)
-#h=7
-#tracker.MeanShiftSeek(slika,h,create_epanechnik_kernel(h,h,1),[80,70],50,0.00);
+#racker.MeanShiftTracker(slika)
+h=11
+tracker.MeanShiftSeek(slika,h,create_epanechnik_kernel(h,h,1),[80,70],20,0.003); #[80,70]
