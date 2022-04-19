@@ -3,14 +3,14 @@ import time
 import cv2
 
 from sequence_utils import VOTSequence
-from ncc_tracker_example import NCCTracker, NCCParams
-from ms_tracker import MeanShiftTracker, MSParams
-
+#from ncc_tracker_example import NCCTracker, NCCParams
+#from ms_tracker import MeanShiftTracker, MSParams
+from Particle import Particle_tracker,PParams
 
 # set the path to directory where you have the sequences
-dataset_path = 'C:\\Work\\RacVid\\vot2014' # TODO: set to the dataet path on your disk
-#seq=["bolt","car","david","fish1","fernando","surfing"]
-seq=["tunnel"]
+dataset_path = 'C:\\Work\\Magisterij_1_leto\\2.semester\\RacVid\\vot2014' # TODO: set to the dataet path on your disk
+seq=["bolt","car","david","fish1","fernando","surfing"]
+#seq=["bolt"]
 for k in seq:
     sequence = k  # choose the sequence you want to test
     print(sequence)
@@ -28,8 +28,8 @@ for k in seq:
     # create parameters and tracker objects
     #parameters = NCCParams()
     #tracker = NCCTracker(parameters)
-    parameters = MSParams()
-    tracker = MeanShiftTracker(parameters)
+    parameters = PParams()
+    tracker = Particle_tracker(parameters)
 
     time_all = 0
 

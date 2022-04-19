@@ -11,38 +11,8 @@ def generate_responses_1():
     responses[70, 50] = 1
     responses[50, 70] = 0.5
     return gausssmooth(responses, 10)
+
 def get_patch(img, center, sz):
-    # crop coordinates
-    w = int(math.floor(sz[0]))
-    h = int(math.floor(sz[1]))
-    if(w%2==0):
-        w=w+1
-    if (h % 2 == 0):
-        h = h + 1
-    x0 = round(int(center[0] - h / 2))
-    y0 = round(int(center[1] - w / 2))
-    x1 = int(round(x0 + h))
-    y1 = int(round(y0 + w))
-    # padding
-    x0_pad = max(0, -x0)
-    x1_pad = max(x1 - img.shape[1] + 1, 0)
-    y0_pad = max(0, -y0)
-    y1_pad = max(y1 - img.shape[0] + 1, 0)
-    # Crop target
-    if len(img.shape) > 2:
-        img_crop = img[y0 + y0_pad:y1 - y1_pad, x0 + x0_pad:x1 - x1_pad, :]
-    else:
-        img_crop = img[y0 + y0_pad:y1 - y1_pad, x0 + x0_pad:x1 - x1_pad]
-
-    im_crop_padded = cv2.copyMakeBorder(img_crop, y0_pad, y1_pad, x0_pad, x1_pad, cv2.BORDER_REPLICATE)
-
-    # crop mask tells which pixels are within the image (1) and which are outside (0)
-    m_ = np.ones((img.shape[0], img.shape[1]), dtype=np.float32)
-    crop_mask = m_[y0 + y0_pad:y1 - y1_pad, x0 + x0_pad:x1 - x1_pad]
-    crop_mask = cv2.copyMakeBorder(crop_mask, y0_pad, y1_pad, x0_pad, x1_pad, cv2.BORDER_CONSTANT, value=0)
-    return im_crop_padded, crop_mask
-
-def get_patchOriginal(img, center, sz):
     # crop coordinates
     x0 = round(int(center[0] - sz[0] / 2))
     y0 = round(int(center[1] - sz[1] / 2))
